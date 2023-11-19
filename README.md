@@ -83,7 +83,7 @@ To run the Bookmarks App locally, follow these steps:
 
 ## Real-Time Updates with MongoDB Realm
 
-In this branch, the application has been updated to utilize MongoDB Realm for real-time updates instead of Server-Sent Events (SSE) used in the master branch.
+In the [feat/mongodb-realm](https://github.com/yaldram/bookmarks-app/tree/feat/mongodb-realm), the application has been updated to utilize MongoDB Realm for real-time updates instead of Server-Sent Events (SSE) used in the master branch.
 
 ### Key Improvements
 1. **Real-Time Updates:** Replaced SSE with MongoDB Realm for seamless real-time data synchronization.
