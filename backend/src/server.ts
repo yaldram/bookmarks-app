@@ -4,7 +4,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import hpp from 'hpp';
 import expressRateLimit from 'express-rate-limit';
-import { pinoHttp } from 'pino-http';
 
 import { logger } from "@utils/logger"
 import { NotFoundError } from "@utils/NotFoundError"
@@ -47,8 +46,6 @@ export class HttpServer {
       })
     );
     this.app.set('trust proxy', 1);
-    // add logger middleware
-    // this.app.use(pinoHttp({ logger: logger }));
   }
 
   // configure routes for express

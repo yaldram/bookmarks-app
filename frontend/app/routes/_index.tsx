@@ -1,3 +1,4 @@
+import * as Realm from "realm-web";
 import { useEffect, useRef, useState } from "react";
 import { json, redirect } from "@remix-run/node";
 import { z } from "zod";
@@ -27,6 +28,8 @@ import {
   fetchBookmarks,
   insertBookmarks,
 } from "~/api/bookmarks";
+
+const realmApp = new Realm.App({ id: "bookmarks-app-rlhnu" });
 
 const createBookmarkSchema = z.object({
   link: z
@@ -147,38 +150,75 @@ export default function Index() {
     }
   }, [params]);
 
-  // run only on mount; not to open too many connections
   useEffect(() => {
-    const eventSource = new EventSource(
-      "http://localhost:8000/api/bookmarks/events"
-    );
+    (async function () {
+      // authenticate using anonymous user
+      realmApp.logIn(Realm.Credentials.anonymous());
 
-    // Handle messages received from the server
-    eventSource.onmessage = (event) => {
-      const updatedBookmark = JSON.parse(event.data) as Bookmark;
+      if (realmApp.currentUser) {
+        const mongodb = realmApp.currentUser.mongoClient("mongodb-atlas");
+        const bookmarksCollection = mongodb
+          .db("bookmarks")
+          .collection("bookmarks");
 
-      if (updatedBookmark) {
-        setBookmarkData((bookmarks) =>
-          bookmarks.map((bookmark) =>
-            bookmark._id === updatedBookmark._id
-              ? { ...bookmark, ...updatedBookmark }
-              : bookmark
-          )
-        );
+        const changeStream = bookmarksCollection.watch({
+          filter: {
+            operationType: "update",
+            "updateDescription.updatedFields.summary": { $exists: true },
+          },
+        });
+
+        for await (const change of changeStream) {
+          // @ts-ignore: we are only watching for updates
+          const updatedBookmark = change.fullDocument as Bookmark;
+
+          // @ts-ignore: we also get the embedding field
+          delete updatedBookmark["embedding"];
+
+          setBookmarkData((bookmarks) =>
+            bookmarks.map((bookmark) =>
+              bookmark._id === updatedBookmark._id.toString()
+                ? { ...bookmark, ...updatedBookmark }
+                : bookmark
+            )
+          );
+        }
       }
-    };
-
-    // Handle SSE errors
-    eventSource.onerror = (error) => {
-      console.error("Error occurred:", error);
-    };
-
-    return () => {
-      if (eventSource) {
-        eventSource.close();
-      }
-    };
+    })();
   }, []);
+
+  // run only on mount; not to open too many connections
+  // useEffect(() => {
+  //   const eventSource = new EventSource(
+  //     "http://localhost:8000/api/bookmarks/events"
+  //   );
+
+  //   // Handle messages received from the server
+  //   eventSource.onmessage = (event) => {
+  //     const updatedBookmark = JSON.parse(event.data) as Bookmark;
+
+  //     if (updatedBookmark) {
+  //       setBookmarkData((bookmarks) =>
+  //         bookmarks.map((bookmark) =>
+  //           bookmark._id === updatedBookmark._id
+  //             ? { ...bookmark, ...updatedBookmark }
+  //             : bookmark
+  //         )
+  //       );
+  //     }
+  //   };
+
+  //   // Handle SSE errors
+  //   eventSource.onerror = (error) => {
+  //     console.error("Error occurred:", error);
+  //   };
+
+  //   return () => {
+  //     if (eventSource) {
+  //       eventSource.close();
+  //     }
+  //   };
+  // }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
