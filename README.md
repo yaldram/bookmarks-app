@@ -81,6 +81,19 @@ To run the Bookmarks App locally, follow these steps:
     },
 ```
 
+## Real-Time Updates with MongoDB Realm
+
+In this branch, the application has been updated to utilize MongoDB Realm for real-time updates instead of Server-Sent Events (SSE) used in the master branch.
+
+### Key Improvements
+1. **Real-Time Updates:** Replaced SSE with MongoDB Realm for seamless real-time data synchronization.
+2. **Reduced Server Load:** By leveraging Realm, the Node server no longer handles change streams or SSE events, focusing solely on API delivery.
+3. **Efficient Client Management:** MongoDB Realm handles client connections and management, reducing server-side compute.
+   
+### Implementation Guide
+To implement these changes:
+1. **Create MongoDB Realm App:** Follow [this tutorial](https://www.mongodb.com/developer/products/mongodb/real-time-data-javascript/) to set up an app service in MongoDB Atlas for real-time data updates.
+
 
 ### Environment Variables in Lambda Function
 
