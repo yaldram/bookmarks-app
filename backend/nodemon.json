@@ -1,0 +1,7 @@
+{
+  "watch": ["src"],
+  "ignore": ["src/**/*.test.ts"],
+  "ext": "ts, json",
+  "exec": "etsc --config=etsc.config.js && node -r ./dist/app.js",
+  "legacyWatch": true
+}

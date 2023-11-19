@@ -1,0 +1,9 @@
+.ionide
+
+.env
+
+node_modules
+
+build
+
+dist

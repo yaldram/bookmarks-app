@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  summarize
+
+  SAM Template for summarizing using Langchain
+
+Parameters:
+  PartnerEventSource:
+    Description: Name of Partner Event Source
+    Type: String
+    Default: 'aws.partner/mongodb.com/stitch.trigger/653ba938c3d71eca7f4f0d88'
+  
+Globals:
+  Function:
+    Timeout: 600
+
+Resources:
+  SummarizeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: summarize/
+      Handler: app.lambdaHandler
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+        - app.ts
+
+  EventRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: Test Events Rule
+      EventBusName: !Ref PartnerEventSource
+      EventPattern: 
+        account: [!Ref AWS::AccountId]
+      Name: EventRule
+      State: ENABLED
+      Targets:
+       - 
+         Arn: 
+           Fn::GetAtt:
+             - "SummarizeFunction"
+             - "Arn"
+         Id: "idEventRule"
+
+  PermissionForEventsToInvokeLambda: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: 
+        Ref: "SummarizeFunction"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "EventRule"
+          - "Arn"         
+
+Outputs:
+  SummarizeFunction:
+    Description: "Summarize Lambda Function ARN"
+    Value: !GetAtt SummarizeFunction.Arn
