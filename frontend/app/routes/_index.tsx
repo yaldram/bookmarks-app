@@ -187,39 +187,6 @@ export default function Index() {
     })();
   }, []);
 
-  // run only on mount; not to open too many connections
-  // useEffect(() => {
-  //   const eventSource = new EventSource(
-  //     "http://localhost:8000/api/bookmarks/events"
-  //   );
-
-  //   // Handle messages received from the server
-  //   eventSource.onmessage = (event) => {
-  //     const updatedBookmark = JSON.parse(event.data) as Bookmark;
-
-  //     if (updatedBookmark) {
-  //       setBookmarkData((bookmarks) =>
-  //         bookmarks.map((bookmark) =>
-  //           bookmark._id === updatedBookmark._id
-  //             ? { ...bookmark, ...updatedBookmark }
-  //             : bookmark
-  //         )
-  //       );
-  //     }
-  //   };
-
-  //   // Handle SSE errors
-  //   eventSource.onerror = (error) => {
-  //     console.error("Error occurred:", error);
-  //   };
-
-  //   return () => {
-  //     if (eventSource) {
-  //       eventSource.close();
-  //     }
-  //   };
-  // }, []);
-
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
       const entry = entries[0];
