@@ -29,7 +29,7 @@ import {
   insertBookmarks,
 } from "~/api/bookmarks";
 
-const realmApp = new Realm.App({ id: "bookmarks-app-rlhnu" });
+const realmApp = new Realm.App({ id: "bookmarks-app-wjney" });
 
 const createBookmarkSchema = z.object({
   link: z
