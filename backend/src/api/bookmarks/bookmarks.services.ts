@@ -11,7 +11,7 @@ export async function searchVector(searchQuery: string) {
         path: "embedding", // filed name of the embedding in the colleciton
         numCandidates: 10, // match with 10 documents
         limit: 4, // return only top 4 results
-        index: "vector-search" // name of our index
+        index: "bookmarks-search" // name of our index
       }
     },
     {
