@@ -13,30 +13,18 @@ import {
   useLoaderData,
   Form,
   useFetcher,
-  useActionData,
   useNavigate,
   useSearchParams,
+  Outlet,
 } from "@remix-run/react";
 
 import { Button } from "~/components/atoms/button";
 import { BookmarkCard } from "~/components/organisms/BookmarkCard";
-import { Modal } from "~/components/molecules/Modal";
 import { Input } from "~/components/atoms/input";
-import { useModal } from "~/hooks/useModal";
-import {
-  deleteBookmark,
-  fetchBookmarks,
-  insertBookmarks,
-} from "~/api/bookmarks";
+import { deleteBookmark, fetchBookmarks } from "~/api/bookmarks";
+import type { Bookmark } from "~/types";
 
 const realmApp = new Realm.App({ id: "bookmarks-app-wjney" });
-
-const createBookmarkSchema = z.object({
-  link: z
-    .string({ required_error: "link is required" })
-    .url("link is not valid"),
-  context: z.string({ required_error: "context is required" }),
-});
 
 const searchBookmarkSchema = z.object({
   search: z.string({ required_error: "search cannot be empty" }),
@@ -51,9 +39,9 @@ export const meta: MetaFunction = () => {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const lastId = new URL(request.url).searchParams.get("lastId");
-  const searchQuery = new URL(request.url).searchParams.get("searchQuery");
+  const search = new URL(request.url).searchParams.get("search");
 
-  const response = await fetchBookmarks(searchQuery, lastId);
+  const response = await fetchBookmarks(search, lastId);
 
   if (!response.ok) throw new Error("Could'nt load bookmarks");
 
@@ -65,19 +53,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
 
-  // handle adding bookmarks
-  if (request.method === "POST") {
-    const submission = parse(formData, { schema: createBookmarkSchema });
-
-    if (!submission.value) {
-      return json(submission, { status: 400 });
-    }
-
-    const { link, context } = submission.value;
-
-    await insertBookmarks(link, context);
-  }
-
   // handle deleting bookmarks
   const bookmarkId = await formData.get("bookmarkId")?.toString();
 
@@ -88,45 +63,20 @@ export async function action({ request }: ActionFunctionArgs) {
   return redirect("/");
 }
 
-type Bookmark = {
-  _id: string;
-  summary?: string;
-  link: string;
-  context: string;
-  tags?: string[];
-};
-
 export default function Index() {
   const bookmarks = useLoaderData<Bookmark[]>();
   const infinteScrollFetcher = useFetcher();
-  const addBookmarksFetcher = useFetcher();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const lastSubmission = useActionData<typeof action>();
 
   const observerRef = useRef(null);
   const searchFormRef = useRef<HTMLFormElement>(null);
 
-  const [createBookmarkForm, { link, context }] = useForm({
-    id: "bookmark",
-    lastSubmission,
-    shouldRevalidate: "onInput",
-    onValidate({ formData }) {
-      return parse(formData, { schema: createBookmarkSchema });
-    },
-  });
-
   const [searchBookmarkForm, { search }] = useForm({
     id: "search",
-    shouldRevalidate: "onInput",
     ref: searchFormRef,
-    onSubmit(event, { submission }) {
-      event.preventDefault();
-      const searchQuery = submission.payload.search as string;
-      navigate(`/?index&searchQuery=${searchQuery}`);
-    },
     defaultValue: {
-      search: params.has("searchQuery") ? params.get("searchQuery") : "",
+      search: params.has("search") ? params.get("search") : "",
     },
     onValidate({ formData }) {
       return parse(formData, { schema: searchBookmarkSchema });
@@ -136,8 +86,6 @@ export default function Index() {
   const [bookmarkData, setBookmarkData] = useState<Bookmark[]>(bookmarks || []);
   const [shouldFetch, setShouldFetch] = useState(true);
 
-  const { isModalOpen, closeModal, toggleModal } = useModal(false);
-
   useEffect(() => {
     setBookmarkData(bookmarks);
     // reset the status to true, whenever the loader runs
@@ -145,7 +93,7 @@ export default function Index() {
   }, [bookmarks]);
 
   useEffect(() => {
-    if (!params.has("searchQuery")) {
+    if (!params.has("search")) {
       searchFormRef.current?.reset();
     }
   }, [params]);
@@ -227,49 +175,8 @@ export default function Index() {
     }
   }, [infinteScrollFetcher.data]);
 
-  useEffect(() => {
-    if (addBookmarksFetcher.formData && isModalOpen) {
-      closeModal();
-    }
-  }, [addBookmarksFetcher.formData, isModalOpen, closeModal]);
-
   return (
     <>
-      <Modal onOutsideClick={toggleModal} isOpen={isModalOpen}>
-        <addBookmarksFetcher.Form method="POST" {...createBookmarkForm.props}>
-          <Modal.Header>Add Bookmark Link</Modal.Header>
-          <Modal.Body className="flex flex-col gap-4">
-            <Input
-              {...conform.input(link, { type: "text", ariaAttributes: true })}
-              label="Link"
-              placeholder="Enter bookmark link"
-              error={link.error}
-            />
-
-            <Input
-              {...conform.input(context, {
-                type: "text",
-                ariaAttributes: true,
-              })}
-              label="Context"
-              placeholder="Enter more context about the link"
-              error={context.error}
-            />
-          </Modal.Body>
-          <Modal.Footer>
-            <Button
-              disabled={
-                addBookmarksFetcher.state === "submitting" ||
-                addBookmarksFetcher.state === "loading"
-              }
-              type="submit"
-            >
-              Save
-            </Button>
-          </Modal.Footer>
-        </addBookmarksFetcher.Form>
-      </Modal>
-
       <Form {...searchBookmarkForm.props}>
         <div className="flex flex-col p-10 gap-6">
           <Input
@@ -281,7 +188,10 @@ export default function Index() {
             placeholder="enter search query"
             error={search.error}
           />
-          <Button>Search</Button>
+          <Button type="submit">Search</Button>
+          <Button type="button" onClick={() => navigate("/")}>
+            Clear
+          </Button>
         </div>
       </Form>
 
@@ -290,12 +200,7 @@ export default function Index() {
           <div key={bookmark._id} className="col-span-1">
             <Form method="DELETE" className="h-full">
               <input type="hidden" name="bookmarkId" value={bookmark._id} />
-              <BookmarkCard
-                tags={bookmark.tags}
-                summary={bookmark.summary}
-                context={bookmark.context}
-                link={bookmark.link}
-              />
+              <BookmarkCard bookmark={bookmark} />
             </Form>
           </div>
         ))}
@@ -305,11 +210,13 @@ export default function Index() {
         <div ref={observerRef} style={{ height: "1px" }} />
       )}
       <Button
-        onClick={toggleModal}
+        onClick={() => navigate("new")}
         className="fixed right-4 bottom-4 p-6 w-16 h-16 text-2xl rounded-full shadow-lg"
       >
         +
       </Button>
+
+      <Outlet />
     </>
   );
 }

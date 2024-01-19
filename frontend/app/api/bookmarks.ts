@@ -1,9 +1,4 @@
-export type Bookmark = {
-  _id: string;
-  link: string;
-  summary: string;
-  tags: string[];
-};
+import type { Bookmark } from "~/types";
 
 export function fetchBookmarks(
   searchQuery: string | null,
@@ -23,13 +18,15 @@ export function fetchBookmarks(
   return fetch(`${url}?${params.toString()}`);
 }
 
-export function insertBookmarks(link: string, context: string) {
+export function insertBookmarks(
+  bookmarkInfo: Pick<Bookmark, "link" | "context">
+) {
   return fetch("http://localhost:8000/api/bookmarks", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ link, context }),
+    body: JSON.stringify(bookmarkInfo),
   });
 }
 
