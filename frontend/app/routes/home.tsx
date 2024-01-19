@@ -1,4 +1,3 @@
-import * as Realm from "realm-web";
 import { useEffect, useRef, useState } from "react";
 import { json, redirect } from "@remix-run/node";
 import { z } from "zod";
@@ -23,8 +22,7 @@ import { BookmarkCard } from "~/components/organisms/BookmarkCard";
 import { Input } from "~/components/atoms/input";
 import { deleteBookmark, fetchBookmarks } from "~/api/bookmarks";
 import type { Bookmark } from "~/types";
-
-const realmApp = new Realm.App({ id: "bookmarks-app-wjney" });
+import { bookmarksChanges } from "~/utils/realm";
 
 const searchBookmarkSchema = z.object({
   search: z.string({ required_error: "search cannot be empty" }),
@@ -100,38 +98,18 @@ export default function Index() {
 
   useEffect(() => {
     (async function () {
-      // authenticate using anonymous user
-      realmApp.logIn(Realm.Credentials.anonymous());
+      await bookmarksChanges<Bookmark>((updatedBookmark) => {
+        //@ts-ignore: we also get the embedding field
+        delete updatedBookmark["embedding"];
 
-      if (realmApp.currentUser) {
-        const mongodb = realmApp.currentUser.mongoClient("mongodb-atlas");
-        const bookmarksCollection = mongodb
-          .db("bookmarks")
-          .collection("bookmarks");
-
-        const changeStream = bookmarksCollection.watch({
-          filter: {
-            operationType: "update",
-            "updateDescription.updatedFields.summary": { $exists: true },
-          },
-        });
-
-        for await (const change of changeStream) {
-          // @ts-ignore: we are only watching for updates
-          const updatedBookmark = change.fullDocument as Bookmark;
-
-          // @ts-ignore: we also get the embedding field
-          delete updatedBookmark["embedding"];
-
-          setBookmarkData((bookmarks) =>
-            bookmarks.map((bookmark) =>
-              bookmark._id === updatedBookmark._id.toString()
-                ? { ...bookmark, ...updatedBookmark }
-                : bookmark
-            )
-          );
-        }
-      }
+        setBookmarkData((bookmarks) =>
+          bookmarks.map((bookmark) =>
+            bookmark._id === updatedBookmark._id.toString()
+              ? { ...bookmark, ...updatedBookmark }
+              : bookmark
+          )
+        );
+      });
     })();
   }, []);
 
