@@ -1,6 +1,7 @@
 import type { Bookmark } from "~/types";
+import { RECORDS_LIMIT } from "~/utils/constant";
 
-export function fetchBookmarks(
+export async function fetchBookmarks(
   searchQuery: string | null,
   lastId: string | null
 ) {
@@ -15,7 +16,15 @@ export function fetchBookmarks(
     params.append("lastId", lastId);
   }
 
-  return fetch(`${url}?${params.toString()}`);
+  params.append("limit", RECORDS_LIMIT.toString());
+
+  const response = await fetch(`${url}?${params.toString()}`);
+
+  if (!response.ok) throw new Error("Could'nt load bookmarks");
+
+  const data = await response.json();
+
+  return data.bookmarks;
 }
 
 export function insertBookmarks(

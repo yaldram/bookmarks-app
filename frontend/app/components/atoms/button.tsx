@@ -11,6 +11,7 @@ const button = cva(
     "px-4",
     "rounded",
     "text-white",
+    "disabled:cursor-not-allowed",
   ],
   {
     variants: {

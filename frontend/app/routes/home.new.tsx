@@ -31,7 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   await insertBookmarks(submission.value);
 
-  return redirect("/");
+  return redirect("/home");
 }
 
 export default function NewBookmark() {

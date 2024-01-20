@@ -1,5 +1,5 @@
 import { cva } from "class-variance-authority";
-import type { ComponentProps } from "react";
+import { forwardRef, type ComponentProps } from "react";
 
 const input = cva(
   [
@@ -25,45 +25,60 @@ const input = cva(
 );
 
 export type InputProps = ComponentProps<"input"> & {
-  label: string;
+  label?: string;
   error?: string;
 };
 
-export function Input({
-  name,
-  id,
-  label,
-  value,
-  onChange,
-  error,
-  placeholder,
-  defaultValue,
-}: InputProps) {
-  return (
-    <div className="w-full">
-      <label
-        className="block text-gray-700 text-sm font-bold mb-1"
-        htmlFor={id}
-      >
-        {label}
-      </label>
-      <input
-        className={input({ error: !!error })}
-        type="text"
-        name={name}
-        id={id}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        defaultValue={defaultValue}
-        aria-invalid={error ? "true" : "false"}
-        aria-describedby={`${id}-error-message`}
-      />
-      {error && (
-        <span id={`${id}-error-message`} className="text-red-500 text-xs mt-1">
-          {error}
-        </span>
-      )}
-    </div>
-  );
-}
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  (
+    {
+      name,
+      id,
+      label,
+      value,
+      onChange,
+      error,
+      placeholder,
+      defaultValue,
+      ...rest
+    },
+    ref
+  ) => {
+    return (
+      <div className="w-full">
+        {label && (
+          <label
+            className="block text-gray-700 text-sm font-bold mb-1"
+            htmlFor={id}
+          >
+            {label}
+          </label>
+        )}
+        <input
+          ref={ref}
+          className={input({ error: !!error })}
+          type="text"
+          name={name}
+          id={id}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          defaultValue={defaultValue}
+          aria-invalid={error ? "true" : "false"}
+          aria-describedby={`${id}-error-message`}
+          {...rest}
+        />
+        {error && (
+          <span
+            id={`${id}-error-message`}
+            className="text-red-500 text-xs mt-1"
+          >
+            {error}
+          </span>
+        )}
+      </div>
+    );
+  }
+);
+
+Input.displayName = "Input";
