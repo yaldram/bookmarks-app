@@ -1,80 +1,51 @@
-import { cva } from "class-variance-authority";
-import { forwardRef, type ComponentProps } from "react";
+import * as React from "react";
+import { Label } from "@radix-ui/react-label";
+import { tv } from "tailwind-variants";
 
-const input = cva(
-  [
-    "w-full",
-    "px-3",
-    "py-2",
-    "border",
-    "rounded",
-    "focus:ring",
-    "focus:border-blue-500",
-    "border-gray-300",
-  ],
-  {
-    variants: {
-      error: {
-        true: ["border-red-500"],
-      },
-    },
-    defaultVariants: {
-      error: false,
-    },
-  }
-);
-
-export type InputProps = ComponentProps<"input"> & {
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
+  id: string;
   error?: string;
-};
+  errorId?: string;
+}
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(
-  (
-    {
-      name,
-      id,
-      label,
-      value,
-      onChange,
-      error,
-      placeholder,
-      defaultValue,
-      ...rest
+const labelStyles = tv({
+  variants: {
+    error: {
+      true: "text-destructive",
     },
-    ref
-  ) => {
+  },
+});
+
+const inputStyles = tv({
+  base: "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+});
+
+const errorStyles = tv({
+  base: "text-sm font-medium text-destructive mt-0.5",
+});
+
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, error, errorId, id, label, ...props }, ref) => {
     return (
-      <div className="w-full">
+      <div className="flex flex-col gap-2 w-full">
         {label && (
-          <label
-            className="block text-gray-700 text-sm font-bold mb-1"
-            htmlFor={id}
-          >
+          <Label className={labelStyles({ error: !!error })} htmlFor={id}>
             {label}
-          </label>
+          </Label>
         )}
         <input
-          ref={ref}
-          className={input({ error: !!error })}
-          type="text"
-          name={name}
           id={id}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          defaultValue={defaultValue}
-          aria-invalid={error ? "true" : "false"}
-          aria-describedby={`${id}-error-message`}
-          {...rest}
+          type={type}
+          className={inputStyles({ className })}
+          ref={ref}
+          {...props}
         />
         {error && (
-          <span
-            id={`${id}-error-message`}
-            className="text-red-500 text-xs mt-1"
-          >
+          <p className={errorStyles()} id={errorId}>
             {error}
-          </span>
+          </p>
         )}
       </div>
     );

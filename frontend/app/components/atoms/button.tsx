@@ -1,51 +1,54 @@
-import { type ComponentProps } from "react";
-import { type VariantProps, cva } from "class-variance-authority";
+import { forwardRef } from "react";
+import type { ButtonHTMLAttributes } from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { tv } from "tailwind-variants";
+import type { VariantProps } from "tailwind-variants";
 
-const button = cva(
-  [
-    "font-bold",
-    "flex",
-    "items-center",
-    "justify-center",
-    "py-2",
-    "px-4",
-    "rounded",
-    "text-white",
-    "disabled:cursor-not-allowed",
-  ],
-  {
-    variants: {
-      variant: {
-        info: ["bg-blue-500", "hover:bg-blue-700"],
-        error: ["bg-red-500", "hover:bg-red-700"],
-      },
+const buttonStyles = tv({
+  base: "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+
+  variants: {
+    variant: {
+      default: "bg-primary text-primary-foreground hover:bg-primary/90",
+      destructive:
+        "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+      outline:
+        "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+      secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+      ghost: "hover:bg-accent hover:text-accent-foreground",
+      link: "text-primary underline-offset-4 hover:underline",
     },
-    defaultVariants: {
-      variant: "info",
+    size: {
+      default: "h-10 px-4 py-2",
+      sm: "h-9 rounded-md px-3",
+      lg: "h-11 rounded-md px-8",
+      icon: "h-10 w-10",
     },
+  },
+  defaultVariants: {
+    variant: "default",
+    size: "default",
+  },
+});
+
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
+  VariantProps<typeof buttonStyles> & {
+    asChild?: boolean;
+  };
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  (props, ref) => {
+    const { className, variant, size, asChild = false, ...delegated } = props;
+    const Comp = asChild ? Slot : "button";
+
+    return (
+      <Comp
+        ref={ref}
+        className={buttonStyles({ variant, size, className })}
+        {...delegated}
+      />
+    );
   }
 );
 
-type ButtonProps = ComponentProps<"button"> & VariantProps<typeof button>;
-
-export function Button(props: ButtonProps) {
-  const { variant, className, ...delegated } = props;
-
-  const buttonStyles = button({ variant, className });
-
-  return <button className={buttonStyles} {...delegated} />;
-}
-
-export type ButtonLinkProps = ComponentProps<"a"> & VariantProps<typeof button>;
-
-export function ButtonLink(props: ButtonLinkProps) {
-  const { variant, href, className, children, ...delegated } = props;
-
-  const buttonStyles = button({ variant, className });
-
-  return (
-    <a href={href} className={buttonStyles} {...delegated}>
-      {children}
-    </a>
-  );
-}
+Button.displayName = "Button";

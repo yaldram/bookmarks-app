@@ -3,17 +3,23 @@ import { json, redirect } from "@remix-run/node";
 import { z } from "zod";
 import { parse } from "@conform-to/zod";
 import { conform, useForm } from "@conform-to/react";
-import { insertBookmarks } from "~/api/bookmarks";
-
-import { Button } from "~/components/atoms/button";
-import { Input } from "~/components/atoms/input";
-import { Modal } from "~/components/molecules/Modal";
 import {
   Form,
   useActionData,
   useNavigate,
   useNavigation,
 } from "@remix-run/react";
+
+import { insertBookmarks } from "~/api/bookmarks";
+import { Button } from "~/components/atoms/button";
+import { Input } from "~/components/atoms/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/molecules/dialog";
 
 const createBookmarkSchema = z.object({
   link: z
@@ -39,7 +45,7 @@ export default function NewBookmark() {
   const navigate = useNavigate();
   const lastSubmission = useActionData<typeof action>();
 
-  const [createBookmarkForm, { link, context }] = useForm({
+  const [form, { link, context }] = useForm({
     id: "bookmark",
     lastSubmission,
     shouldRevalidate: "onInput",
@@ -48,16 +54,30 @@ export default function NewBookmark() {
     },
   });
 
+  const handleDialogOpen = (opening: boolean) => {
+    if (opening) return;
+
+    return navigate("..");
+  };
+
   return (
-    <Modal onOutsideClick={() => navigate("..")} isOpen>
-      <Form method="POST" {...createBookmarkForm.props}>
-        <Modal.Header>Add Bookmark Link</Modal.Header>
-        <Modal.Body className="flex flex-col gap-4">
+    <Dialog defaultOpen onOpenChange={handleDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add a new bookmark</DialogTitle>
+          <DialogDescription>
+            Add a new bookmark. Click save when you're done.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Form method="POST" className="flex flex-col gap-5" {...form.props}>
           <Input
             {...conform.input(link, { type: "text", ariaAttributes: true })}
             label="Link"
+            id="link"
             placeholder="Enter bookmark link"
             error={link.error}
+            errorId={context.errorId}
           />
 
           <Input
@@ -65,17 +85,22 @@ export default function NewBookmark() {
               type: "text",
               ariaAttributes: true,
             })}
+            id="context"
             label="Context"
             placeholder="Enter more context about the link"
             error={context.error}
+            errorId={context.errorId}
           />
-        </Modal.Body>
-        <Modal.Footer>
-          <Button type="submit" disabled={navigation.state !== "idle"}>
+
+          <Button
+            disabled={navigation.state !== "idle"}
+            type="submit"
+            className="w-full"
+          >
             Save
           </Button>
-        </Modal.Footer>
-      </Form>
-    </Modal>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }

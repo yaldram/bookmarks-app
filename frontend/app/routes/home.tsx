@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { json, redirect } from "@remix-run/node";
+import { PlusIcon, SearchIcon, BadgeXIcon } from "lucide-react";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -14,7 +15,7 @@ import {
 } from "@remix-run/react";
 
 import { Button } from "~/components/atoms/button";
-import { BookmarkCard } from "~/components/organisms/BookmarkCard";
+import { BookmarkCard } from "~/components/organisms/bookmark-card";
 import { Input } from "~/components/atoms/input";
 import { deleteBookmark, fetchBookmarks } from "~/api/bookmarks";
 import type { Bookmark } from "~/types";
@@ -85,42 +86,50 @@ export default function Index() {
     })();
   }, []);
 
+  const clearInput = () => {
+    if (searchParams) return navigate("/");
+
+    setSearch("");
+  };
+
   return (
     <>
       <Form>
-        <div className="flex p-10 gap-6">
+        <div className="flex items-end p-10 pb-0 gap-6">
           <Input
             ref={searchRef}
             name="search"
+            id="search"
             placeholder="enter search query"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
           <fieldset className="flex gap-6" disabled={!search}>
-            <Button type="submit">Search</Button>
-            <Button type="button" onClick={() => navigate("/")}>
-              Clear
+            <Button type="submit">
+              <SearchIcon className="mr-2 h-4 w-4" /> Search
+            </Button>
+            <Button variant="secondary" type="button" onClick={clearInput}>
+              <BadgeXIcon className="mr-2 h-4 w-4" /> Clear
             </Button>
           </fieldset>
         </div>
       </Form>
 
-      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4 align-stretch">
+      <div className="px-10 py-10 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10 align-stretch">
         {bookmarkData.map((bookmark) => (
-          <div key={bookmark._id} className="col-span-1">
-            <Form method="POST" className="h-full">
-              <input type="hidden" name="bookmarkId" value={bookmark._id} />
-              <BookmarkCard bookmark={bookmark} />
-            </Form>
-          </div>
+          <Form method="POST" key={bookmark._id}>
+            <input type="hidden" name="bookmarkId" value={bookmark._id} />
+            <BookmarkCard bookmark={bookmark} />
+          </Form>
         ))}
       </div>
 
       <Button
         onClick={() => navigate("new")}
-        className="fixed right-4 bottom-4 p-6 w-16 h-16 text-2xl rounded-full shadow-lg"
+        size="icon"
+        className="rounded-full h-14 w-14 fixed right-4 bottom-4"
       >
-        +
+        <PlusIcon className="h-8 w-8" />
       </Button>
 
       <Outlet />
