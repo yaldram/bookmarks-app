@@ -6,10 +6,8 @@ import { searchVector } from './bookmarks.services';
 
 class BookmarksController {
   async getAllBookmarks(req: Request, res: Response) {
-    const { lastId, searchQuery, limit } = req.query;
-    
-    const query = lastId ? { _id: { $lt: new ObjectId(lastId as string) } } : {};
-    const recordsLimit = limit ? Number(limit) : 5
+    const { searchQuery, limit } = req.query;
+    const recordsLimit = Number(limit) || 5;
 
     if (searchQuery) {
       const results = await searchVector(searchQuery as string);
@@ -22,7 +20,7 @@ class BookmarksController {
       });
     }
     
-    const bookmarks = await bookmarkCollection.find(query,
+    const bookmarks = await bookmarkCollection.find({},
       { projection: { embedding: 0 } })
       .sort({ _id: -1 })
       .limit(recordsLimit).toArray();
