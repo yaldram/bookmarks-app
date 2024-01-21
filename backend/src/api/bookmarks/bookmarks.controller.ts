@@ -2,28 +2,19 @@ import { Request, Response } from 'express';
 import { ObjectId } from "mongodb"
 
 import { bookmarkCollection } from '../../utils/dbClient';
-import { searchVector } from './bookmarks.services';
+import { bookmarksVectorSearch } from './bookmarks.services';
 
 class BookmarksController {
   async getAllBookmarks(req: Request, res: Response) {
-    const { searchQuery, limit } = req.query;
-    const recordsLimit = Number(limit) || 5;
-
-    if (searchQuery) {
-      const results = await searchVector(searchQuery as string);
-      const bookmarks = await results.toArray();
-     
-      return res.status(200).json({
-        status: true,
-        statusCode: 200,
-        bookmarks
-      });
-    }
+    const { collectionId } = req.query;
     
-    const bookmarks = await bookmarkCollection.find({},
-      { projection: { embedding: 0 } })
-      .sort({ _id: -1 })
-      .limit(recordsLimit).toArray();
+    const bookmarks = await bookmarkCollection
+    .find(
+      { collectionId }, 
+      { projection: { embedding: 0 } }
+    )
+    .sort({ _id: -1 })
+    .toArray();
 
     return res.status(200).json({
       status: true,
@@ -32,11 +23,26 @@ class BookmarksController {
     });
   }
 
+  async searchBookmarks(req: Request, res: Response) {
+    const { searchQuery, collectionId } = req.query;
+    
+    const data = await bookmarksVectorSearch(searchQuery as string, collectionId as string)
+    const bookmarks = await data.toArray()
+
+    return res.status(200).json({
+      status: true,
+      statusCode: 200,
+      bookmarks
+    });
+  }
+
+
   async insertBookmark(req: Request, res: Response) {
     const link = req.body.link;
     const context = req.body.context;
+    const collectionId = req.body.collectionId
 
-    const bookmark = await bookmarkCollection.insertOne({ link, context });
+    const bookmark = await bookmarkCollection.insertOne({ link, context, collectionId });
 
     return res.status(201).json({
       status: true,
@@ -44,7 +50,8 @@ class BookmarksController {
       bookmark: {
         _id: bookmark.insertedId.toString(),
         link,
-        context
+        context,
+        collectionId
       }
     })
   }
@@ -67,6 +74,8 @@ class BookmarksController {
       statusCode: 200
     })
   }
+
+  
 }
 
 export const bookmarksController = new BookmarksController();

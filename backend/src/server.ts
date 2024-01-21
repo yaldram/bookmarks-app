@@ -9,6 +9,7 @@ import { logger } from "@utils/logger"
 import { NotFoundError } from "@utils/NotFoundError"
 import { ValidationError } from "@utils/ValidationError"
 import { bookmarksRouter } from '@api/bookmarks/bookmarks.router';
+import { collectionsRouter } from "@api/collections/collections.router";
 
 export class HttpServer {
   public app: express.Application;
@@ -54,6 +55,7 @@ export class HttpServer {
     this.app.get('/ip', (req, res) => res.send(req.ip));
     this.healthCheckRoute()
     this.app.use('/api/bookmarks', bookmarksRouter);
+    this.app.use('/api/collections', collectionsRouter);
   }
 
   private healthCheckRoute() {

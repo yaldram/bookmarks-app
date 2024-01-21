@@ -9,6 +9,7 @@ class BookmarksRouter extends BaseRouter {
 
   addRoutes(): void {
     this.router.get('/', asyncHandler(bookmarksController.getAllBookmarks));
+    this.router.get("/search", asyncHandler(bookmarksController.searchBookmarks))
     this.router.post('/', asyncHandler(bookmarksController.insertBookmark));
     this.router.delete("/:bookmarkId", asyncHandler(bookmarksController.deleteBookmark));
   }

@@ -1,25 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import { json, redirect } from "@remix-run/node";
-import { PlusIcon, SearchIcon, BadgeXIcon } from "lucide-react";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction,
-} from "@remix-run/node";
-import {
-  useLoaderData,
-  Form,
-  useNavigate,
-  useSearchParams,
-  Outlet,
-} from "@remix-run/react";
+import { Outlet, NavLink, useNavigate, useLoaderData } from "@remix-run/react";
+import { json } from "@remix-run/node";
+import type { MetaFunction } from "@remix-run/node";
 
 import { Button } from "~/components/atoms/button";
-import { BookmarkCard } from "~/components/organisms/bookmark-card";
-import { Input } from "~/components/atoms/input";
-import { deleteBookmark, fetchBookmarks } from "~/api/bookmarks";
-import type { Bookmark } from "~/types";
-import { bookmarksChanges } from "~/utils/realm";
+import { fetchCollections } from "~/api/collections";
 
 export const meta: MetaFunction = () => {
   return [
@@ -28,111 +12,64 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const lastId = new URL(request.url).searchParams.get("lastId");
-  const search = new URL(request.url).searchParams.get("search");
+export async function loader() {
+  const collections = await fetchCollections();
 
-  const bookmarks = await fetchBookmarks(search, lastId);
-
-  return json(bookmarks);
-}
-
-export async function action({ request }: ActionFunctionArgs) {
-  const formData = await request.formData();
-
-  // handle deleting bookmarks
-  const bookmarkId = formData.get("bookmarkId")?.toString();
-
-  if (bookmarkId) await deleteBookmark(bookmarkId);
-
-  return redirect("/home");
+  return json(collections);
 }
 
 export default function Index() {
-  const bookmarks = useLoaderData<Bookmark[]>();
+  const collections = useLoaderData<typeof loader>();
+
   const navigate = useNavigate();
 
-  const [params] = useSearchParams();
-  const searchParams = params.get("search") || "";
-  const [search, setSearch] = useState(searchParams);
-  const searchRef = useRef<HTMLInputElement>(null);
-
-  const [bookmarkData, setBookmarkData] = useState<Bookmark[]>(bookmarks || []);
-
-  useEffect(() => {
-    // sets the bookmark state after a mutation
-    setBookmarkData(bookmarks);
-  }, [bookmarks]);
-
-  useEffect(() => {
-    // reset the search params on clear
-    setSearch(searchParams);
-  }, [searchParams]);
-
-  useEffect(() => {
-    (async function () {
-      await bookmarksChanges<Bookmark>((updatedBookmark) => {
-        //@ts-ignore: we also get the embedding field
-        delete updatedBookmark["embedding"];
-
-        setBookmarkData((bookmarks) =>
-          bookmarks.map((bookmark) =>
-            bookmark._id === updatedBookmark._id.toString()
-              ? { ...bookmark, ...updatedBookmark }
-              : bookmark
-          )
-        );
-      });
-    })();
-  }, []);
-
-  const clearInput = () => {
-    if (searchParams) return navigate("/");
-
-    setSearch("");
-  };
-
   return (
-    <>
-      <Form>
-        <div className="flex items-end p-10 pb-0 gap-6">
-          <Input
-            ref={searchRef}
-            name="search"
-            id="search"
-            placeholder="enter search query"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          <fieldset className="flex gap-6" disabled={!search}>
-            <Button type="submit">
-              <SearchIcon className="mr-2 h-4 w-4" /> Search
-            </Button>
-            <Button variant="secondary" type="button" onClick={clearInput}>
-              <BadgeXIcon className="mr-2 h-4 w-4" /> Clear
-            </Button>
-          </fieldset>
-        </div>
-      </Form>
+    <div className="flex h-screen">
+      <div className="flex justify-between h-full flex-col border-e w-1/4">
+        <div>
+          {/* Sticky bar separator */}
+          <div
+            onClick={() => navigate("/home")}
+            className="flex cursor-pointer hover:bg-muted pointer-cursor uppercase font-bold text-2xl items-center px-8 sticky inset-x-0 top-0 border-b bg-red h-20"
+          >
+            All Collections
+          </div>
 
-      <div className="px-10 py-10 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10 align-stretch">
-        {bookmarkData.map((bookmark) => (
-          <Form method="POST" key={bookmark._id}>
-            <input type="hidden" name="bookmarkId" value={bookmark._id} />
-            <BookmarkCard bookmark={bookmark} />
-          </Form>
-        ))}
+          {/* List of collections */}
+          <div className="px-4 pb-4">
+            <ul className="mt-6 space-y-3">
+              {collections.map((collection) => (
+                <li key={collection._id}>
+                  {/* Navigation links for collections */}
+                  <NavLink
+                    to={`/home/collection/${collection._id}`}
+                    className={({ isActive }) =>
+                      `block rounded-lg p-4 text-sm font-medium hover:bg-accent hover:text-accent-foreground ${
+                        isActive
+                          ? "bg-accent text-accent-foreground"
+                          : "bg-background"
+                      }`
+                    }
+                  >
+                    {collection.name}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Bottom section - User details and Logout button */}
+        <div className="sticky px-6 inset-x-0 bottom-0 pb-6">
+          <Button onClick={() => navigate("new")} className="w-full" size="lg">
+            Add New Collection
+          </Button>
+        </div>
       </div>
 
-      <Button
-        onClick={() => navigate("new")}
-        size="icon"
-        className="rounded-full h-14 w-14 fixed right-4 bottom-4"
-      >
-        <PlusIcon className="h-8 w-8" />
-      </Button>
-
-      <Outlet />
-    </>
+      <div className="w-full h-full">
+        <Outlet />
+      </div>
+    </div>
   );
 }

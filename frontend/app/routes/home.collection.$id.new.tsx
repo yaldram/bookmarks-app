@@ -10,6 +10,7 @@ import {
   useNavigation,
 } from "@remix-run/react";
 
+import { insertBookmarks } from "~/api/bookmarks";
 import { Button } from "~/components/atoms/button";
 import { Input } from "~/components/atoms/input";
 import {
@@ -19,36 +20,39 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/molecules/dialog";
-import { insertCollections } from "~/api/collections";
 
-const createCollectionSchema = z.object({
-  name: z.string({ required_error: "name is required" }),
-  description: z.string({ required_error: "description is required" }),
+const createBookmarkSchema = z.object({
+  link: z
+    .string({ required_error: "link is required" })
+    .url("link is not valid"),
+  context: z.string({ required_error: "context is required" }),
 });
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
 
-  const submission = parse(formData, { schema: createCollectionSchema });
+  const submission = parse(formData, { schema: createBookmarkSchema });
 
   if (!submission.value) return json(submission, { status: 400 });
 
-  const collection = await insertCollections(submission.value);
+  const collectionId = params.id as string;
 
-  return redirect(`/home/collection/${collection._id}`);
+  await insertBookmarks({ ...submission.value, collectionId });
+
+  return redirect(`/home/collection/${collectionId}`);
 }
 
-export default function NewCollectionPage() {
+export default function NewBookmark() {
   const navigation = useNavigation();
   const navigate = useNavigate();
   const lastSubmission = useActionData<typeof action>();
 
-  const [form, { name, description }] = useForm({
-    id: "new-collection",
+  const [form, { link, context }] = useForm({
+    id: "new-bookmark",
     lastSubmission,
     shouldRevalidate: "onInput",
     onValidate({ formData }) {
-      return parse(formData, { schema: createCollectionSchema });
+      return parse(formData, { schema: createBookmarkSchema });
     },
   });
 
@@ -62,32 +66,32 @@ export default function NewCollectionPage() {
     <Dialog defaultOpen onOpenChange={handleDialogOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add a new collection</DialogTitle>
+          <DialogTitle>Add a new bookmark</DialogTitle>
           <DialogDescription>
-            Add a new collection. Click save when you're done.
+            Add a new bookmark. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
 
         <Form method="POST" className="flex flex-col gap-5" {...form.props}>
           <Input
-            {...conform.input(name, { type: "text", ariaAttributes: true })}
-            label="Name"
-            id="name"
-            placeholder="Name for the collection."
-            error={name.error}
-            errorId={name.errorId}
+            {...conform.input(link, { type: "text", ariaAttributes: true })}
+            label="Link"
+            id="link"
+            placeholder="Enter bookmark link"
+            error={link.error}
+            errorId={link.errorId}
           />
 
           <Input
-            {...conform.input(description, {
+            {...conform.input(context, {
               type: "text",
               ariaAttributes: true,
             })}
-            id="description"
-            label="Description"
-            placeholder="A short description."
-            error={description.error}
-            errorId={description.errorId}
+            id="context"
+            label="Context"
+            placeholder="Enter more context about the link"
+            error={context.error}
+            errorId={context.errorId}
           />
 
           <Button

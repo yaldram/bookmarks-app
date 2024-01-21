@@ -1,22 +1,10 @@
 import type { Bookmark } from "~/types";
-import { RECORDS_LIMIT } from "~/utils/constant";
 
-export async function fetchBookmarks(
-  searchQuery: string | null,
-  lastId: string | null
-) {
+export async function fetchBookmarks(collectionId: string) {
   let url = "http://localhost:8000/api/bookmarks";
   let params = new URLSearchParams();
 
-  if (searchQuery) {
-    params.append("searchQuery", searchQuery);
-  }
-
-  if (lastId) {
-    params.append("lastId", lastId);
-  }
-
-  params.append("limit", RECORDS_LIMIT.toString());
+  params.append("collectionId", collectionId);
 
   const response = await fetch(`${url}?${params.toString()}`);
 
@@ -27,8 +15,28 @@ export async function fetchBookmarks(
   return data.bookmarks;
 }
 
+export async function searchBookmarks(
+  searchQuery: string,
+  collectionId?: string
+) {
+  let url = "http://localhost:8000/api/bookmarks/search";
+  let params = new URLSearchParams();
+
+  params.append("searchQuery", searchQuery);
+
+  if (collectionId) params.append("collectionId", collectionId);
+
+  const response = await fetch(`${url}?${params.toString()}`);
+
+  if (!response.ok) throw new Error("Could'nt search all bookmarks");
+
+  const data = await response.json();
+
+  return data.bookmarks as Bookmark[];
+}
+
 export function insertBookmarks(
-  bookmarkInfo: Pick<Bookmark, "link" | "context">
+  bookmarkInfo: Pick<Bookmark, "link" | "context" | "collectionId">
 ) {
   return fetch("http://localhost:8000/api/bookmarks", {
     method: "POST",
