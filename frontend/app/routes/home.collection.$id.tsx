@@ -10,16 +10,17 @@ import {
   useSearchParams,
 } from "@remix-run/react";
 
-import {
-  deleteBookmark,
-  fetchBookmarks,
-  searchBookmarks,
-} from "~/api/bookmarks";
 import { BookmarkCard } from "~/components/organisms/bookmark-card";
 import { Input } from "~/components/atoms/input";
 import { Button } from "~/components/atoms/button";
 import type { Bookmark } from "~/types";
 import { bookmarksChanges } from "~/utils/realm";
+import { ScrollArea } from "~/components/molecules/scroll-area";
+import {
+  deleteBookmark,
+  fetchBookmarks,
+  searchBookmarks,
+} from "~/api/bookmarks";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const collectionId = params.id as string;
@@ -114,14 +115,16 @@ export default function HomeIndexPage() {
         </div>
       </Form>
 
-      <div className="px-10 py-10 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10 align-stretch">
-        {bookmarkData.map((bookmark) => (
-          <Form method="POST" key={bookmark._id}>
-            <input type="hidden" name="bookmarkId" value={bookmark._id} />
-            <BookmarkCard bookmark={bookmark} />
-          </Form>
-        ))}
-      </div>
+      <ScrollArea style={{ height: "90%" }} className="px-10 pt-8">
+        <div className="pb-8 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10 align-stretch">
+          {bookmarkData.map((bookmark) => (
+            <Form method="POST" key={bookmark._id}>
+              <input type="hidden" name="bookmarkId" value={bookmark._id} />
+              <BookmarkCard bookmark={bookmark} />
+            </Form>
+          ))}
+        </div>
+      </ScrollArea>
 
       <Button
         onClick={() => navigate("new")}
