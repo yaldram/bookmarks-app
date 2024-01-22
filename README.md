@@ -2,7 +2,7 @@
 
 Manage bookmarks easily, search with Natural Language, save articles, resources, and websites. Explore app details and technology.
 
-[Video Demo of the application](https://pub-2e209747425f40cdacae2d98eae729f3.r2.dev/Bookmarks AI.webm)
+[Video Demo of the application](https://pub-2e209747425f40cdacae2d98eae729f3.r2.dev/Bookmarks%20AI.webm)
 
 ## Project Overview
 
