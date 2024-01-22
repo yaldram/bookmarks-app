@@ -55,7 +55,7 @@ export default function HomeIndexPage() {
             ref={searchRef}
             name="search"
             id="search"
-            placeholder="Search all your bookmarks using natural."
+            placeholder="Search all your bookmarks using natural language."
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
