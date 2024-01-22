@@ -67,7 +67,7 @@ export default function Index() {
         </div>
       </div>
 
-      <div className="w-full h-full">
+      <div className="w-full h-full overflow-hidden">
         <Outlet />
       </div>
     </div>
