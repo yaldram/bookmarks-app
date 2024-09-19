@@ -1,8 +1,8 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { z } from "zod";
-import { parse } from "@conform-to/zod";
-import { conform, useForm } from "@conform-to/react";
+import { parseWithZod } from "@conform-to/zod";
+import { getInputProps, useForm } from "@conform-to/react";
 import {
   Form,
   useActionData,
@@ -10,6 +10,7 @@ import {
   useNavigation,
 } from "@remix-run/react";
 
+import { insertCollections } from "~/api/collections";
 import { Button } from "~/components/atoms/button";
 import { Input } from "~/components/atoms/input";
 import {
@@ -19,7 +20,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/molecules/dialog";
-import { insertCollections } from "~/api/collections";
 
 const createCollectionSchema = z.object({
   name: z.string({ required_error: "name is required" }),
@@ -29,9 +29,11 @@ const createCollectionSchema = z.object({
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
 
-  const submission = parse(formData, { schema: createCollectionSchema });
+  const submission = parseWithZod(formData, { schema: createCollectionSchema });
 
-  if (!submission.value) return json(submission, { status: 400 });
+  if (submission.status !== "success") {
+    return json({ ...submission.reply() });
+  }
 
   const collection = await insertCollections(submission.value);
 
@@ -41,14 +43,14 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function NewCollectionPage() {
   const navigation = useNavigation();
   const navigate = useNavigate();
-  const lastSubmission = useActionData<typeof action>();
+  const actionData = useActionData<typeof action>();
 
   const [form, { name, description }] = useForm({
     id: "new-collection",
-    lastSubmission,
-    shouldRevalidate: "onInput",
+    lastResult: actionData,
+    shouldValidate: "onInput",
     onValidate({ formData }) {
-      return parse(formData, { schema: createCollectionSchema });
+      return parseWithZod(formData, { schema: createCollectionSchema });
     },
   });
 
@@ -68,25 +70,27 @@ export default function NewCollectionPage() {
           </DialogDescription>
         </DialogHeader>
 
-        <Form method="POST" className="flex flex-col gap-5" {...form.props}>
+        <Form
+          method="POST"
+          className="flex flex-col gap-5"
+          id={form.id}
+          onSubmit={form.onSubmit}
+        >
           <Input
-            {...conform.input(name, { type: "text", ariaAttributes: true })}
+            {...getInputProps(name, { type: "text" })}
             label="Name"
             id="name"
             placeholder="Name for the collection."
-            error={name.error}
+            error={name.errors?.[0] ?? ""}
             errorId={name.errorId}
           />
 
           <Input
-            {...conform.input(description, {
-              type: "text",
-              ariaAttributes: true,
-            })}
+            {...getInputProps(description, { type: "text" })}
             id="description"
             label="Description"
             placeholder="A short description."
-            error={description.error}
+            error={description.errors?.[0] ?? ""}
             errorId={description.errorId}
           />
 

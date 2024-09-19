@@ -1,8 +1,8 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { z } from "zod";
-import { parse } from "@conform-to/zod";
-import { conform, useForm } from "@conform-to/react";
+import { parseWithZod } from "@conform-to/zod";
+import { getInputProps, useForm } from "@conform-to/react";
 import {
   Form,
   useActionData,
@@ -31,9 +31,11 @@ const createBookmarkSchema = z.object({
 export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
 
-  const submission = parse(formData, { schema: createBookmarkSchema });
+  const submission = parseWithZod(formData, { schema: createBookmarkSchema });
 
-  if (!submission.value) return json(submission, { status: 400 });
+  if (submission.status !== "success") {
+    return json({ ...submission.reply() });
+  }
 
   const collectionId = params.id as string;
 
@@ -45,21 +47,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function NewBookmark() {
   const navigation = useNavigation();
   const navigate = useNavigate();
-  const lastSubmission = useActionData<typeof action>();
+  const actionData = useActionData<typeof action>();
 
   const [form, { link, context }] = useForm({
     id: "new-bookmark",
-    lastSubmission,
-    shouldRevalidate: "onInput",
+    lastResult: actionData,
+    shouldValidate: "onInput",
     onValidate({ formData }) {
-      return parse(formData, { schema: createBookmarkSchema });
+      return parseWithZod(formData, { schema: createBookmarkSchema });
     },
   });
 
   const handleDialogOpen = (opening: boolean) => {
     if (opening) return;
 
-    return navigate(-1);
+    return navigate("..");
   };
 
   return (
@@ -72,25 +74,27 @@ export default function NewBookmark() {
           </DialogDescription>
         </DialogHeader>
 
-        <Form method="POST" className="flex flex-col gap-5" {...form.props}>
+        <Form
+          method="POST"
+          className="flex flex-col gap-5"
+          id={form.id}
+          onSubmit={form.onSubmit}
+        >
           <Input
-            {...conform.input(link, { type: "text", ariaAttributes: true })}
+            {...getInputProps(link, { type: "text" })}
             label="Link"
             id="link"
             placeholder="Enter bookmark link"
-            error={link.error}
+            error={link.errors?.[0] ?? ""}
             errorId={link.errorId}
           />
 
           <Input
-            {...conform.input(context, {
-              type: "text",
-              ariaAttributes: true,
-            })}
+            {...getInputProps(context, { type: "text" })}
             id="context"
             label="Context"
             placeholder="Enter more context about the link"
-            error={context.error}
+            error={context.errors?.[0] ?? ""}
             errorId={context.errorId}
           />
 
