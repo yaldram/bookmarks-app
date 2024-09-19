@@ -68,7 +68,7 @@ export default function HomeIndexPage() {
 
   return (
     <>
-      <SearchInput />
+      <SearchInput placeholder="Search collection using natural language" />
 
       <BookmarksGrid bookmarks={bookmarkData} />
 

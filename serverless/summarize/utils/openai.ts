@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { ChatCompletionMessageParam } from 'openai/resources';
 
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.OPENAI_PROJECT_KEY,
 });
 
 export async function generateSummary(context: string, text: string) {
@@ -52,7 +52,7 @@ export async function generateSummary(context: string, text: string) {
 
     const chatCompletion = await openai.chat.completions.create({
         messages: messages,
-        model: 'gpt-3.5-turbo-0613',
+        model: 'gpt-4o-mini',
         functions: function_descriptions,
         temperature: 0,
     });

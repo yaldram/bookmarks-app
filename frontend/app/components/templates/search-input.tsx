@@ -1,11 +1,15 @@
+import { useEffect, useState } from "react";
 import { Form, useNavigate, useSearchParams } from "@remix-run/react";
 import { BadgeXIcon, SearchIcon } from "lucide-react";
 
 import { Input } from "../atoms/input";
 import { Button } from "../atoms/button";
-import { useEffect, useState } from "react";
 
-export function SearchInput() {
+export type SearcInputProps = {
+  placeholder: string
+}
+
+export function SearchInput({ placeholder }: SearcInputProps) {
   const navigate = useNavigate();
 
   const [params] = useSearchParams();
@@ -30,7 +34,7 @@ export function SearchInput() {
         <Input
           name="search"
           id="search"
-          placeholder="Search this collection using natural language."
+          placeholder={placeholder}
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />

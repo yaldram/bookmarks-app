@@ -59,7 +59,7 @@ export default function NewBookmark() {
   const handleDialogOpen = (opening: boolean) => {
     if (opening) return;
 
-    return navigate("..");
+    return navigate(-1);
   };
 
   return (

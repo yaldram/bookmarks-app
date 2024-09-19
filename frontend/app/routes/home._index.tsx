@@ -24,7 +24,7 @@ export default function HomeIndexPage() {
 
   return (
     <>
-      <SearchInput />
+      <SearchInput placeholder="Search all bookmarks using natural language" />
 
       <BookmarksGrid bookmarks={bookmarks} />
     </>

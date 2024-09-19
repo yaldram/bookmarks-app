@@ -55,7 +55,7 @@ export default function NewCollectionPage() {
   const handleDialogOpen = (opening: boolean) => {
     if (opening) return;
 
-    return navigate("..");
+    return navigate(-1);
   };
 
   return (
